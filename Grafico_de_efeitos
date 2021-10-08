@@ -1,0 +1,29 @@
+graficos = function(variavelY) {
+  # GERAR GRAFICO COM EFEITO [MODELO LOGIT] 
+  # 
+  df_cat <- df %>% select(-customer_id,wallet_id,seq_frentes) %>%
+    mutate_if(is.numeric, funs(ifelse(. > 0, 1, .)))
+  
+  # Modelo logistico - Apenas para entender os pesos de cada variavel.
+  formula = colnames(df_cat[variavelY]) %>% paste(" ~ .")
+  m_logit = glm(formula = formula, family = binomial(link="logit"), data = df_cat)
+  
+  # Separae Cooeficientes para avaliar peso das categorias. 
+  coef <- m_logit$coefficients %>% cbind.data.frame
+  coef <- mutate(coef, coef = row.names(coef)) %>% .[-1,]
+  colnames(coef) <- c("valor","coef") 
+  coef <- as_tibble(coef)
+  
+  # Grafico
+  p = coef %>% filter(valor < -.5 & valor > .5)
+  mutate(coef = fct_reorder(coef, valor)) %>% 
+    ggplot( aes(x=coef, y=valor)) + geom_segment( aes(xend=coef, yend=0)) +
+    geom_point(size=1, color="red") +  coord_flip() + 
+    labs( title = paste('Avaliar impacto depar.')
+          ,subtitle = paste("Y = ",variavelY) %>% str_to_upper
+    )
+  p
+}
+
+
+graficos("bomboneire")
